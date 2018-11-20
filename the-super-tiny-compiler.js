@@ -86,7 +86,8 @@
  * If you are not familiar with one or the other. I'll just give you a quick intro.
  *
  * If we had two functions `add` and `subtract` they would be written like this:
- *
+ * lisp是前缀表达式，js是中缀表达式
+ * 这个解析器是针对前缀表达式的解析器，解析生成js源码
  *                  LISP                      C
  *
  *   2 + 2          (add 2 2)                 add(2, 2)
@@ -103,6 +104,7 @@
 /**
  * Most compilers break down into three primary stages: Parsing, Transformation,
  * and Code Generation
+ * 解析(生成ast)、变换(ast级的变换)、代码生成(根据ast生成代码)
  *
  * 1. *Parsing* is taking raw code and turning it into a more abstract
  *    representation of the code.
@@ -115,7 +117,9 @@
  */
 
 /**
- * Parsing
+ * Parsing 
+ * - 解析阶段包括词法分析(raw code -> token)和语法分析(token -> ast)
+ * - 将lisp源码转换成ast
  * -------
  *
  * Parsing typically gets broken down into two phases: Lexical Analysis and
@@ -181,7 +185,7 @@
  */
 
 /**
- * Transformation
+ * Transformation - 这个阶段可以转换成不同语言，如：ast-js -> ast-go -> raw go
  * --------------
  *
  * The next type of stage for a compiler is transformation. Again, this just
@@ -211,7 +215,7 @@
  *     params: [...nested nodes go here...],
  *   }
  *
- * When transforming the AST we can manipulate nodes by
+ * When transforming the AST we can manipulate(操纵) nodes by
  * adding/removing/replacing properties, we can add new nodes, remove nodes, or
  * we could leave the existing AST alone and create an entirely new one based
  * on it.
@@ -219,10 +223,10 @@
  * Since we’re targeting a new language, we’re going to focus on creating an
  * entirely new AST that is specific to the target language.
  *
- * Traversal
+ * Traversal - 遍历
  * ---------
  *
- * In order to navigate through all of these nodes, we need to be able to
+ * In order to navigate(定位) through all of these nodes, we need to be able to
  * traverse through them. This traversal process goes to each node in the AST
  * depth-first.
  *
@@ -328,7 +332,7 @@
  * ---------------
  *
  * The final phase of a compiler is code generation. Sometimes compilers will do
- * things that overlap with transformation, but for the most part code
+ * things that overlap(交叠) with transformation, but for the most part code
  * generation just means take our AST and string-ify code back out.
  *
  * Code generators work several different ways, some compilers will reuse the
@@ -364,6 +368,8 @@
  *                                   (/^▽^)/
  *                                THE TOKENIZER!
  * ============================================================================
+ * 这是个简易版，只收集了括号、数字集、字符串集、函数名
+ * 
  */
 
 /**
@@ -403,7 +409,7 @@ function tokenizer(input) {
     // We check to see if we have an open parenthesis:
     if (char === '(') {
 
-      // If we do, we push a new token with the type `paren` and set the value
+      // If we do, we push a new token with the type `paren(括号)` and set the value
       // to an open parenthesis.
       tokens.push({
         type: 'paren',
@@ -436,7 +442,7 @@ function tokenizer(input) {
     //
     // So here we're just going to test for existence and if it does exist we're
     // going to just `continue` on.
-    let WHITESPACE = /\s/;
+    let WHITESPACE = /\s/; // 匹配一个空白符，包括空格、制表符、换页符、换行符和其他 Unicode 空格。详见:https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/RegExp
     if (WHITESPACE.test(char)) {
       current++;
       continue;
@@ -461,6 +467,7 @@ function tokenizer(input) {
       // Then we're going to loop through each character in the sequence until
       // we encounter a character that is not a number, pushing each character
       // that is a number to our `value` and incrementing `current` as we go.
+      // 将完整的数字序列，如123，作为一个token
       while (NUMBERS.test(char)) {
         value += char;
         char = input[++current];
@@ -542,6 +549,8 @@ function tokenizer(input) {
  *                                 ヽ/❀o ل͜ o\ﾉ
  *                                THE PARSER!!!
  * ============================================================================
+ * 生成ast
+ * 每一个node可以是各种类型，如Program/callExpression/numberIteral等，含有type和body
  */
 
 /**
@@ -701,6 +710,8 @@ function parser(tokens) {
  *                                 ⌒(❀>◞౪◟<❀)⌒
  *                               THE TRAVERSER!!!
  * ============================================================================
+ * 遍历ast，同时根据不同的type丢给不同的访问器，我们称为visitor
+ * 这里留一个疑问，为何要有exit，他处理了什么
  */
 
 /**
@@ -811,6 +822,9 @@ function traverser(ast, visitor) {
  *                                   ⁽(◍˃̵͈̑ᴗ˂̵͈̑)⁽
  *                              THE TRANSFORMER!!!
  * ============================================================================
+ * 原始ast 转换为 新的ast，目的是什么？
+ * - 原始ast匹配lisp
+ * - 新的ast匹配js
  */
 
 /**
@@ -868,7 +882,7 @@ function transformer(ast) {
   // use a property named `context` on our parent nodes that we're going to push
   // nodes to their parent's `context`. Normally you would have a better
   // abstraction than this, but for our purposes this keeps things simple.
-  //
+  // 
   // Just take note that the context is a reference *from* the old ast *to* the
   // new ast.
   ast._context = newAst.body;
@@ -1030,7 +1044,7 @@ function compiler(input) {
   let ast    = parser(tokens);
   let newAst = transformer(ast);
   let output = codeGenerator(newAst);
-
+  console.log(output)
   // and simply return the output!
   return output;
 }
